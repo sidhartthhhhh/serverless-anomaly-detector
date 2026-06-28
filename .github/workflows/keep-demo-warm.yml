@@ -1,0 +1,18 @@
+name: Process pending readings
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call processing endpoint
+        run: |
+          curl -X POST "$APP_URL/api/process-pending/" \
+            -H "X-Process-Token: $PROCESS_TOKEN"
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          PROCESS_TOKEN: ${{ secrets.PROCESS_TOKEN }}
