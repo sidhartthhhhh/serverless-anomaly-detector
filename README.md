@@ -204,4 +204,4 @@ The detection layer looks at recent readings for the same `source` and `metric`.
 
 ## License
 
-Add a license before publishing if you want others to reuse this project.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
