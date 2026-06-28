@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}CSV Upload | Anomaly Detector{% endblock %}
+
+{% block content %}
+<section class="section-head">
+    <div>
+        <p class="eyebrow">Batch ingestion</p>
+        <h1>Upload CSV readings</h1>
+    </div>
+</section>
+
+<section class="panel form-panel">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button primary" type="submit">Upload and Score</button>
+    </form>
+    <div class="code-sample">
+        <span>Required columns</span>
+        <code>source,metric,value,unit</code>
+    </div>
+</section>
+{% endblock %}

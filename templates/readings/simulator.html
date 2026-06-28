@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Simulator | Anomaly Detector{% endblock %}
+
+{% block content %}
+<section class="section-head">
+    <div>
+        <p class="eyebrow">Sensor simulator</p>
+        <h1>Generate readings and watch predictions update.</h1>
+    </div>
+    <a class="button" href="{% url 'dashboard' %}">Back to Dashboard</a>
+</section>
+
+<section class="workspace">
+    <div class="panel form-panel">
+        <label>Source
+            <input id="source" value="factory-line-a">
+        </label>
+        <label>Metric
+            <input id="metric" value="temperature">
+        </label>
+        <label>Unit
+            <input id="unit" value="F">
+        </label>
+        <label>Base Value
+            <input id="baseValue" type="number" value="72" step="0.1">
+        </label>
+        <label>
+            <input id="forceSpike" type="checkbox">
+            Force next reading as anomaly
+        </label>
+        <div class="actions">
+            <button class="button primary" id="sendReading">Send Reading</button>
+            <button class="button" id="sendBurst">Send Burst</button>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Response</h2>
+            <span id="status">Ready</span>
+        </div>
+        <pre id="output" class="output">{}</pre>
+    </div>
+</section>
+
+<script>
+function reading(forceSpike = false) {
+    const base = Number(document.getElementById("baseValue").value);
+    const noise = (Math.random() - 0.5) * 5;
+    const spike = forceSpike ? (Math.random() > 0.5 ? 18 : -16) : 0;
+    return {
+        source: document.getElementById("source").value,
+        metric: document.getElementById("metric").value,
+        unit: document.getElementById("unit").value,
+        value: Number((base + noise + spike).toFixed(2)),
+        payload: { simulator: true, forced_spike: forceSpike }
+    };
+}
+
+async function postJson(url, data) {
+    document.getElementById("status").textContent = "Sending";
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+    const json = await response.json();
+    document.getElementById("status").textContent = response.ok ? "Scored" : "Error";
+    document.getElementById("output").textContent = JSON.stringify(json, null, 2);
+}
+
+document.getElementById("sendReading").addEventListener("click", () => {
+    const force = document.getElementById("forceSpike").checked;
+    postJson("/api/readings/", reading(force));
+});
+
+document.getElementById("sendBurst").addEventListener("click", () => {
+    const rows = Array.from({ length: 20 }, (_, index) => reading(index === 16));
+    postJson("/api/readings/bulk/", { readings: rows });
+});
+</script>
+{% endblock %}

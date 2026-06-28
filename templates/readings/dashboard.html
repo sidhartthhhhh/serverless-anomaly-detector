@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | Anomaly Detector{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <p class="eyebrow">Serverless data anomaly detector</p>
+        <h1>Live sensor scoring with stored predictions and alerts.</h1>
+    </div>
+    <a class="button primary" href="{% url 'simulator' %}">Open Simulator</a>
+</section>
+
+<section class="stats-grid">
+    <article class="stat">
+        <span>Readings</span>
+        <strong>{{ totals.readings }}</strong>
+    </article>
+    <article class="stat">
+        <span>Predictions</span>
+        <strong>{{ totals.predictions }}</strong>
+    </article>
+    <article class="stat danger">
+        <span>Anomalies</span>
+        <strong>{{ totals.anomalies }}</strong>
+    </article>
+    <article class="stat">
+        <span>Alerts</span>
+        <strong>{{ totals.alerts }}</strong>
+    </article>
+</section>
+
+<section class="workspace">
+    <div class="panel chart-panel">
+        <div class="panel-header">
+            <h2>Recent Signal</h2>
+            <span>Last 7 days</span>
+        </div>
+        <canvas id="signalChart" height="120"></canvas>
+    </div>
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Metric Mix</h2>
+            <span>{{ by_metric|length }} active</span>
+        </div>
+        <div class="metric-list">
+            {% for row in by_metric %}
+                <div>
+                    <span>{{ row.metric }}</span>
+                    <strong>{{ row.total }}</strong>
+                </div>
+            {% empty %}
+                <p class="empty">No readings yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-header">
+        <h2>Latest Predictions</h2>
+        <a href="{% url 'upload_csv' %}">Import CSV</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Source</th>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prediction in recent_predictions %}
+                    <tr>
+                        <td>{{ prediction.reading.recorded_at|date:"M d H:i" }}</td>
+                        <td>{{ prediction.reading.source }}</td>
+                        <td>{{ prediction.reading.metric }}</td>
+                        <td>{{ prediction.reading.value }} {{ prediction.reading.unit }}</td>
+                        <td>{{ prediction.score|floatformat:3 }}</td>
+                        <td>
+                            {% if prediction.is_anomaly %}
+                                <span class="badge danger">Anomaly</span>
+                            {% else %}
+                                <span class="badge ok">Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty">Use the simulator or upload a CSV to start scoring data.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{{ chart_data|json_script:"chart-data" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const rows = JSON.parse(document.getElementById("chart-data").textContent);
+const ctx = document.getElementById("signalChart");
+new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: rows.map((row) => row.time),
+        datasets: [{
+            label: "Reading value",
+            data: rows.map((row) => row.value),
+            borderColor: "#2563eb",
+            backgroundColor: rows.map((row) => row.isAnomaly ? "#ef4444" : "#2563eb"),
+            pointRadius: rows.map((row) => row.isAnomaly ? 6 : 3),
+            tension: 0.25
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: "#e5e7eb" } }
+        }
+    }
+});
+</script>
+{% endblock %}
