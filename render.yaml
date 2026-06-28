@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: anomaly-detector
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "python manage.py migrate && gunicorn anomaly_detector.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://*.onrender.com"
+      - key: DATABASE_URL
+        sync: false
+      - key: ALERT_RECIPIENT_EMAIL
+        sync: false
+      - key: PROCESS_TOKEN
+        generateValue: true
